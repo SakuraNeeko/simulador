@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Crédito — Banco Andino</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="simulador.css">
+
+    <!-- ✅ EXAMEN — Estilos adicionales (Parámetros, VIP table, Modal) -->
+    <style>
+        /* ── Sección de Parámetros ─────────────────────────── */
+        .param-box {
+            background: #f5f7fa;
+            border: 1.5px solid #e8ecf2;
+            border-left: 4px solid #c9a84c;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 28px;
+        }
+        .param-box h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 15px;
+            color: #0a1628;
+            margin-bottom: 12px;
+        }
+        .param-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .param-row .input-wrap { flex: 1; min-width: 160px; }
+        .param-row .btn { flex: 0 0 auto; height: 42px; padding: 0 20px; font-size: 13px; }
+        #errMontoMaximo { font-size: 12px; margin-top: 6px; font-weight: 700; }
+
+        /* ── Tabla VIP ─────────────────────────────────────── */
+        #tablaVIP {
+            display: none;
+            margin-top: 24px;
+        }
+        .vip-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .vip-table th {
+            background: #0a1628;
+            color: #c9a84c;
+            padding: 10px 12px;
+            text-align: left;
+            font-family: 'Playfair Display', serif;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+        }
+        .vip-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e8ecf2;
+            color: #0a1628;
+        }
+        .vip-table tbody tr:hover { background: #fdf8ed; }
+
+        /* ── Botones de acción extra ───────────────────────── */
+        .extra-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .btn--vip {
+            background: linear-gradient(135deg, #c9a84c, #8a6800);
+            color: #fff;
+            border: none;
+        }
+        .btn--vip:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn--about {
+            background: transparent;
+            color: #0a1628;
+            border: 2px solid #0a1628;
+        }
+        .btn--about:hover { background: #0a1628; color: #fff; }
+
+        /* ── Modal Acerca De ───────────────────────────────── */
+        #modalAcercaDe {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 22, 40, 0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-card {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 460px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+            animation: modalIn 0.25s ease;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.92); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #0a1628, #1e3560);
+            padding: 28px 28px 20px;
+            text-align: center;
+        }
+        .modal-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #c9a84c;
+            margin: 0 auto 14px;
+            display: block;
+            object-fit: cover;
+            background: #c9a84c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+        .modal-nombre {
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .modal-carrera {
+            color: #c9a84c;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .modal-body {
+            padding: 24px 28px;
+        }
+        .modal-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #e8ecf2;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        .modal-item:last-of-type { border-bottom: none; }
+        .modal-item span:first-child { font-size: 18px; }
+        .modal-frase {
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: #fdf8ed;
+            border-left: 3px solid #c9a84c;
+            border-radius: 6px;
+            font-style: italic;
+            font-size: 13px;
+            color: #0a1628;
+            line-height: 1.5;
+        }
+        .modal-footer {
+            padding: 16px 28px 24px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-inner">
+            <a href="#" class="nav-logo">
+                <div class="logo-icon">
+                    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="38" height="38" rx="9" fill="#c9a84c"/>
+                        <polygon points="19,7 32,30 6,30" fill="#0a1628"/>
+                        <polygon points="19,13 26,27 12,27" fill="#c9a84c" opacity="0.45"/>
+                        <circle cx="19" cy="22" r="3.2" fill="#0a1628"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-name">BANCO ANDINO</span>
+                    <span class="logo-slogan">Crece con nosotros</span>
+                </div>
+            </a>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#" class="nav-link">Inicio</a></li>
+                <li><a href="#" class="nav-link active">Simulador</a></li>
+                <li><a href="#" class="nav-link">Tasas</a></li>
+                <li><a href="#" class="nav-link">Sucursales</a></li>
+                <li><a href="#" class="nav-link nav-link--new">Inversiones ✦</a></li>
+            </ul>
+
+            <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-inner">
+            <p class="hero-eyebrow">Herramienta financiera</p>
+            <h1 class="hero-title">Simulador de Crédito</h1>
+            <p class="hero-subtitle">Ingresa tus datos y descubre en segundos si calificas para un crédito</p>
+        </div>
+        <div class="hero-shape" aria-hidden="true"></div>
+    </div>
+
+    <main class="main-content">
+        <div class="card">
+
+            <!-- PARÁMETROS -->
+            <div class="param-box">
+                <h3>⚙️ Parámetros del Sistema</h3>
+                <div class="param-row">
+                    <div class="input-wrap" id="wrapMontoMaximo">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="txtMontoMaximo" placeholder="Monto máximo (ej: 50000)" min="100">
+                    </div>
+                    <button id="btnGuardarParam" class="btn btn--primary">Guardar Monto Máximo</button>
+                </div>
+                <div id="errMontoMaximo"></div>
+            </div>
+
+            <!-- SECCIÓN 01 — SITUACIÓN FINANCIERA -->
+            <div class="section-header">
+                <span class="section-number">01</span>
+                <h2>Situación Financiera</h2>
+            </div>
+
+            <div class="form-grid">
+                <div class="field field--full">
+                    <label for="txtIngresos">Ingresos mensuales</label>
+                    <div class="input-wrap" id="wrapIngresos">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="txtIngresos" placeholder="Ej: 1000.00" min="0">
+                    </div>
+                    <div class="error-msg" id="errIngresos"></div>
+                </div>
+
+                <div class="field">
+                    <label for="txtArriendo">Arriendo</label>
+                    <div class="input-wrap" id="wrapArriendo">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="txtArriendo" placeholder="0.00" min="0">
+                    </div>
+                    <div class="error-msg" id="errArriendo"></div>
+                </div>
+
+                <div class="field">
+                    <label for="txtAlimentacion">Alimentación</label>
+                    <div class="input-wrap" id="wrapAlimentacion">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="txtAlimentacion" placeholder="0.00" min="0">
+                    </div>
+                    <div class="error-msg" id="errAlimentacion"></div>
+                </div>
+
+                <div class="field field--full">
+                    <label for="txtVarios">Varios</label>
+                    <div class="input-wrap" id="wrapVarios">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="txtVarios" placeholder="0.00" min="0">
+                    </div>
+                    <div class="error-msg" id="errVarios"></div>
+                </div>
+
+            <!-- CAMPO TELÉFONO -->
+                <div class="field field--full">
+                    <label for="txtTelefono">Teléfono del cliente</label>
+                    <div class="input-wrap" id="wrapTelefono">
+                        <span class="input-prefix">📞</span>
+                        <input type="text" id="txtTelefono" placeholder="Ej: 0991234567" maxlength="15">
+                    </div>
+                    <div class="error-msg" id="errTelefono"></div>
+                </div>
+            </div>
+
+            <div class="results-row">
+                <div class="result-chip">
+                    <span class="result-chip__label">Total egresos</span>
+                    <span class="result-chip__value" id="spnTotalEgresos">—</span>
+                </div>
+                <div class="result-chip">
+                    <span class="result-chip__label">Disponible mensual</span>
+                    <span class="result-chip__value" id="spnDisponible">—</span>
+                </div>
+                <div class="result-chip result-chip--gold">
+                    <span class="result-chip__label">Capacidad de pago</span>
+                    <span class="result-chip__value" id="spnCapacidadPago">—</span>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- SECCIÓN 02 — SOLICITUD DE CRÉDITO ──────────── -->
+            <div class="section-header">
+                <span class="section-number">02</span>
+                <h2>Solicitud de Crédito</h2>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="txtMonto">Monto solicitado</label>
+                    <div class="input-wrap" id="wrapMonto">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="txtMonto" placeholder="Ej: 5000.00" min="0">
+                    </div>
+                    <div class="error-msg" id="errMonto"></div>
+                </div>
+
+                <div class="field">
+                    <label for="txtPlazo">Plazo (años)</label>
+                    <div class="input-wrap" id="wrapPlazo">
+                        <span class="input-prefix">yr</span>
+                        <input type="number" id="txtPlazo" placeholder="Ej: 2" min="1" max="30">
+                    </div>
+                    <div class="error-msg" id="errPlazo"></div>
+                </div>
+
+                <div class="field field--full">
+                    <label for="txtTasaInteres">Tasa de interés anual (%)</label>
+                    <div class="input-wrap" id="wrapTasa">
+                        <span class="input-prefix">%</span>
+                        <input type="number" id="txtTasaInteres" placeholder="Ej: 10" min="0">
+                    </div>
+                    <div class="error-msg" id="errTasa"></div>
+                </div>
+            </div>
+
+            <div class="results-row">
+                <div class="result-chip">
+                    <span class="result-chip__label">Interés a pagar</span>
+                    <span class="result-chip__value" id="spnInteresPagar">—</span>
+                </div>
+                <div class="result-chip">
+                    <span class="result-chip__label">Total préstamo</span>
+                    <span class="result-chip__value" id="spnTotalPrestamo">—</span>
+                </div>
+                <div class="result-chip result-chip--gold">
+                    <span class="result-chip__label">Cuota mensual</span>
+                    <span class="result-chip__value" id="spnCuotaMensual">—</span>
+                </div>
+            </div>
+
+            <div class="estado-box">
+                <span class="estado-label">Estado de crédito:</span>
+                <span class="estado-badge" id="spnEstadoCredito">ANALIZANDO...</span>
+            </div>
+
+            <div class="buttons">
+                <button id="btnCalcularCredito" class="btn btn--primary">Calcular Crédito</button>
+                <button id="btnReiniciar" class="btn btn--secondary">Reiniciar</button>
+            </div>
+
+            <!-- ✅ EXAMEN §3 y §4 — Botones extra ──────────── -->
+            <div class="extra-buttons">
+                <button id="btnCreditosVIP" class="btn btn--vip">💎 Créditos VIP</button>
+                <button id="btnAcercaDe" class="btn btn--about">ℹ️ Acerca de</button>
+            </div>
+
+            <!-- ✅ EXAMEN §3 — Tabla VIP (oculta por defecto) → -->
+            <div id="tablaVIP"></div>
+
+        </div>
+        <p class="nota-legal">* Simulación referencial. Los valores reales pueden variar según análisis crediticio. Incluye USD 100 por impuestos y contribución SOLCA.</p>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <svg width="28" height="28" viewBox="0 0 38 38" fill="none">
+                    <rect width="38" height="38" rx="9" fill="#c9a84c"/>
+                    <polygon points="19,7 32,30 6,30" fill="#0a1628"/>
+                    <circle cx="19" cy="22" r="3.2" fill="#0a1628"/>
+                </svg>
+                <span>BANCO ANDINO</span>
+            </div>
+            <p>© 2025 Banco Andino S.A. — Regulado por la Superintendencia de Bancos del Ecuador</p>
+        </div>
+    </footer>
+
+    <!-- ✅ EXAMEN §4 — MODAL ACERCA DE ──────────────────── -->
+    <div id="modalAcercaDe">
+        <div class="modal-card">
+            <div class="modal-header">
+                <!-- Cambia el emoji o pon una etiqueta <img> con tu foto -->
+                <div class="modal-avatar">🧑‍💻</div>
+                <p class="modal-nombre">Bryan Morán</p>
+                <p class="modal-carrera">Desarrollo Web — KrakeDev</p>
+            </div>
+            <div class="modal-body">
+                <div class="modal-item">
+                    <span>💼</span>
+                    <span>Asistente de Sistemas</span>
+                </div>
+                <div class="modal-item">
+                    <span>🎓</span>
+                    <span>Estudiante de Desarrollo Web · KrakeDev School</span>
+                </div>
+                <div class="modal-item">
+                    <span>🐙</span>
+                    <span>GitHub: https://github.com/SakuraNeeko/simulador.git</span>
+                </div>
+                <div class="modal-item">
+                    <span>🌐</span>
+                    <span>Portafolio desplegado en Vercel</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnCerrarModal" class="btn btn--primary" style="max-width:200px">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="funciones.js"></script>
+    <script src="simulador.js"></script>
+</body>
+</html>
